@@ -21,7 +21,7 @@ jobs:
           cd app
           REQ=$(find. -name "requirements.txt" | head -n 1)
           echo "Found $REQ"
-          pip install -r $REQ
+          pip install -r "$REQ"
 
       - uses: actions/setup-node@v3
         with:
@@ -33,7 +33,7 @@ jobs:
           PKG=$(find. -name "package.json" | head -n 1)
           DIR=$(dirname "$PKG")
           echo "Frontend at $DIR"
-          cd $DIR
+          cd "$DIR"
           npm install
           npm run build
 
