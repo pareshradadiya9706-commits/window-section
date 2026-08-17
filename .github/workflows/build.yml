@@ -1,11 +1,12 @@
-name: Build Real APK
+name: Build Final APK - Capacitor
 on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Unzip
+
+      - name: Unzip Project
         run: |
           rm -rf app
           unzip -o "*.zip" -d app
@@ -14,81 +15,34 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Build Web
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build Web + Make APK with Capacitor
         run: |
           PKG=$(find app -name "package.json" | head -n 1)
           DIR=$(dirname "$PKG")
           cd "$DIR"
+          echo "Building in $DIR"
           rm -rf node_modules package-lock.json
           npm install
           npm run build
-          # Fix absolute path /assets to./assets
-          sed -i 's|src="/|src="./|g; s|href="/|href="./|g' dist/index.html
-          echo "BUILD_DIR=$(pwd)/dist" >> $GITHUB_ENV
-          cat dist/index.html | head -n 20
+          ls dist
 
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.22.0'
+          # Capacitor install
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "Window Section" com.windowsection.app --web-dir=dist
+          npx cap add android
+          npx cap copy android
 
-      - name: Make APK with WebView
-        run: |
-          flutter create apk_wrapper
-          cd apk_wrapper
-          flutter pub add webview_flutter
-          mkdir -p assets/www
-          cp -r $BUILD_DIR/* assets/www/
-
-          cat > lib/main.dart << 'DART'
-          import 'package:flutter/material.dart';
-          import 'package:webview_flutter/webview_flutter.dart';
-          void main(){ WidgetsFlutterBinding.ensureInitialized(); runApp(const MyApp()); }
-          class MyApp extends StatelessWidget{
-            const MyApp({super.key});
-            @override Widget build(BuildContext context){
-              return MaterialApp(title: 'Window Section', home: const WebPage(), debugShowCheckedModeBanner: false);
-            }
-          }
-          class WebPage extends StatefulWidget{
-            const WebPage({super.key});
-            @override State<WebPage> createState()=> _WebPageState();
-          }
-          class _WebPageState extends State<WebPage>{
-            late final WebViewController c;
-            @override void initState(){
-              super.initState();
-              c = WebViewController()
-              ..setJavaScriptMode(JavaScriptMode.unrestricted)
-              ..setBackgroundColor(Colors.white)
-              ..loadFlutterAsset('assets/www/index.html');
-            }
-            @override Widget build(BuildContext context){
-              return Scaffold(body: SafeArea(child: WebViewWidget(controller: c)));
-            }
-          }
-          DART
-
-          echo "name: apk_wrapper
-          description: Window Section
-          publish_to: 'none'
-          version: 1.0.0+1
-          environment:
-            sdk: '>=3.0.0 <4.0.0'
-          dependencies:
-            flutter:
-              sdk: flutter
-            webview_flutter: ^4.8.0
-          flutter:
-            uses-material-design: true
-            assets:
-              - assets/www/
-              - assets/www/assets/
-          " > pubspec.yaml
-
-          flutter pub get
-          flutter build apk --debug
+          cd android
+          chmod +x gradlew
+         ./gradlew assembleDebug
+          ls app/build/outputs/apk/debug/
 
       - uses: actions/upload-artifact@v4
         with:
-          name: window-section-final
-          path: apk_wrapper/build/app/outputs/flutter-apk/app-debug.apk
+          name: window-section-final-apk
+          path: "**/app/build/outputs/apk/debug/app-debug.apk"
