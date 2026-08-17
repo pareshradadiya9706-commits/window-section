@@ -1,0 +1,30 @@
+name: Build APK from ZIP
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Unzip project
+        run: |
+          unzip -o "*.zip"
+          # zip ની અંદર નું ફોલ્ડર શોધો
+          PROJECT_DIR=$(find. -maxdepth 2 -name "pubspec.yaml" -exec dirname {} \; | head -n 1)
+          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+          ls -la $PROJECT_DIR
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+
+      - name: Build APK
+        run: |
+          cd $PROJECT_DIR
+          flutter pub get
+          flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: my-app-apk
+          path: ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-release.apk
