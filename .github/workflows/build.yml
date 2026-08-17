@@ -22,8 +22,10 @@ jobs:
           rm -rf node_modules package-lock.json
           npm install
           npm run build
+          # Fix absolute path /assets to./assets
+          sed -i 's|src="/|src="./|g; s|href="/|href="./|g' dist/index.html
           echo "BUILD_DIR=$(pwd)/dist" >> $GITHUB_ENV
-          ls -la dist
+          cat dist/index.html | head -n 20
 
       - uses: subosito/flutter-action@v2
         with:
@@ -44,7 +46,7 @@ jobs:
           class MyApp extends StatelessWidget{
             const MyApp({super.key});
             @override Widget build(BuildContext context){
-              return MaterialApp(title: 'Window Section', home: const WebPage());
+              return MaterialApp(title: 'Window Section', home: const WebPage(), debugShowCheckedModeBanner: false);
             }
           }
           class WebPage extends StatefulWidget{
@@ -56,12 +58,12 @@ jobs:
             @override void initState(){
               super.initState();
               c = WebViewController()
-               ..setJavaScriptMode(JavaScriptMode.unrestricted)
-               ..setBackgroundColor(Colors.white)
-               ..loadFlutterAsset('assets/www/index.html');
+              ..setJavaScriptMode(JavaScriptMode.unrestricted)
+              ..setBackgroundColor(Colors.white)
+              ..loadFlutterAsset('assets/www/index.html');
             }
             @override Widget build(BuildContext context){
-              return Scaffold(appBar: AppBar(title: const Text('Window Section')), body: WebViewWidget(controller: c));
+              return Scaffold(body: SafeArea(child: WebViewWidget(controller: c)));
             }
           }
           DART
@@ -88,5 +90,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: window-section-apk-real
+          name: window-section-final
           path: apk_wrapper/build/app/outputs/flutter-apk/app-debug.apk
