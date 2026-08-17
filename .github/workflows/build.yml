@@ -6,13 +6,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Unzip project
+      - name: Unzip and Find Project
         run: |
           unzip -o "*.zip"
-          # zip ની અંદર નું ફોલ્ડર શોધો
-          PROJECT_DIR=$(find. -maxdepth 2 -name "pubspec.yaml" -exec dirname {} \; | head -n 1)
+          echo "--- All files ---"
+          ls -R | head -n 100
+          PROJECT_DIR=$(find. -name "pubspec.yaml" | head -n 1 | xargs dirname)
+          echo "Found Flutter project at: $PROJECT_DIR"
           echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
-          ls -la $PROJECT_DIR
 
       - uses: subosito/flutter-action@v2
         with:
@@ -20,11 +21,11 @@ jobs:
 
       - name: Build APK
         run: |
-          cd $PROJECT_DIR
+          cd "${{ env.PROJECT_DIR }}"
           flutter pub get
-          flutter build apk --release
+          flutter build apk --debug
 
       - uses: actions/upload-artifact@v4
         with:
-          name: my-app-apk
-          path: ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-release.apk
+          name: window-section-apk
+          path: ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-debug.apk
