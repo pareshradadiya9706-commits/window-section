@@ -5,23 +5,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
       - name: Unzip
         run: |
           rm -rf app
-          unzip -o "*.zip" -d app
-          ls app
-
+          unzip -o *.zip -d app
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-
       - uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 17
-
-      - name: Build Web and APK
+      - name: Build APK
         run: |
           PKG=$(find app -name package.json | head -n 1)
           DIR=$(dirname $PKG)
@@ -29,15 +24,16 @@ jobs:
           npm install
           npm run build
           npm install @capacitor/core @capacitor/cli @capacitor/android
-          npx cap init "Window Section" com.windowsection.app --web-dir=dist
+          npx cap init WindowSection com.windowsection.app --web-dir=dist
           npx cap add android
           npx cap copy android
           cd android
           chmod +x gradlew
          ./gradlew assembleDebug
-
-      - name: Upload APK
+          find. -name app-debug.apk -exec cp {} /tmp/app-debug.apk \;
+          ls -lh /tmp/app-debug.apk
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: window-section-final
-          path: "**/app-debug.apk"
+          path: /tmp/app-debug.apk
