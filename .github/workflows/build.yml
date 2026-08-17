@@ -1,42 +1,37 @@
-name: Build Web App
+name: Build APK
 on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
       - name: Unzip
         run: |
           rm -rf app
           unzip -o "*.zip" -d app
-          ls -la app
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Build Backend
-        run: |
-          REQ=$(find app -name "requirements.txt" | head -n 1)
-          echo "Found $REQ"
-          pip install -r $REQ
-
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Build Frontend
+      - name: Build Web
         run: |
           PKG=$(find app -name "package.json" | head -n 1)
           DIR=$(dirname "$PKG")
-          echo "Frontend at $DIR"
           cd "$DIR"
           rm -rf node_modules package-lock.json
           npm install
           npm run build
-
+          echo "DIST=$(find. -type d -name dist | head -n 1)" >> $GITHUB_ENV
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+      - name: Create Wrapper and Build APK
+        run: |
+          flutter create apk_wrapper
+          cd apk_wrapper
+          flutter pub add webview_flutter
+          cp -r../${{ env.DIST }}/* assets/ 2>/dev/null || mkdir -p assets && cp -r../app/**/dist/* assets/ || true
+          flutter build apk --debug
       - uses: actions/upload-artifact@v4
         with:
-          name: web-build
-          path: app
+          name: window-section-apk
+          path: apk_wrapper/build/app/outputs/flutter-apk/app-debug.apk
