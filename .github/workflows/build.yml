@@ -11,7 +11,6 @@ jobs:
           rm -rf app
           unzip -o "*.zip" -d app
           ls -la app
-          find app -name "requirements.txt"
 
       - uses: actions/setup-python@v4
         with:
@@ -23,9 +22,9 @@ jobs:
           echo "Found $REQ"
           pip install -r $REQ
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Build Frontend
         run: |
@@ -33,6 +32,7 @@ jobs:
           DIR=$(dirname "$PKG")
           echo "Frontend at $DIR"
           cd "$DIR"
+          rm -rf node_modules package-lock.json
           npm install
           npm run build
 
