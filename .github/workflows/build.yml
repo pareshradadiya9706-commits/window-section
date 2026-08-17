@@ -1,4 +1,4 @@
-name: Build Final APK
+name: Build APK
 on: [push]
 jobs:
   build:
@@ -12,11 +12,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - uses: actions/setup-java@v3
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
-      - name: Build APK
+      - name: Build
         run: |
           PKG=$(find app -name package.json | head -n 1)
           DIR=$(dirname $PKG)
@@ -30,10 +30,9 @@ jobs:
           cd android
           chmod +x gradlew
          ./gradlew assembleDebug
-          find. -name app-debug.apk -exec cp {} /tmp/app-debug.apk \;
-          ls -lh /tmp/app-debug.apk
+          cp app/build/outputs/apk/debug/app-debug.apk /tmp/app.apk
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: window-section-final
-          path: /tmp/app-debug.apk
+          path: /tmp/app.apk
