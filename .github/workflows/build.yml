@@ -6,23 +6,38 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Unzip and List
+      - name: Unzip
         run: |
-          unzip -o "*.zip"
-          ls -la
-          echo "--- Finding pubspec.yaml ---"
-          find. -name "pubspec.yaml" || echo "Flutter project NOT FOUND"
+          rm -rf app
+          unzip -o "*.zip" -d app
+          ls -la app
 
-      - name: Build Python Backend Check
-        run: |
-          cd $(find. -name "requirements.txt" | head -n 1 | xargs dirname)
-          pip install -r requirements.txt
-          python -m pytest || echo "Tests done"
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
-      - name: Build React Frontend
+      - name: Build Backend
         run: |
-          FRONTEND_DIR=$(find. -name "package.json" | head -n 1 | xargs dirname)
-          echo "Frontend at $FRONTEND_DIR"
-          cd $FRONTEND_DIR
+          cd app
+          REQ=$(find. -name "requirements.txt" | head -n 1)
+          echo "Found $REQ"
+          pip install -r $REQ
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Build Frontend
+        run: |
+          cd app
+          PKG=$(find. -name "package.json" | head -n 1)
+          DIR=$(dirname "$PKG")
+          echo "Frontend at $DIR"
+          cd $DIR
           npm install
           npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: app
