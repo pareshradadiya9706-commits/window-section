@@ -11,6 +11,7 @@ jobs:
           rm -rf app
           unzip -o "*.zip" -d app
           ls -la app
+          find app -name "requirements.txt"
 
       - uses: actions/setup-python@v4
         with:
@@ -18,10 +19,9 @@ jobs:
 
       - name: Build Backend
         run: |
-          cd app
-          REQ=$(find. -name "requirements.txt" | head -n 1)
+          REQ=$(find app -name "requirements.txt" | head -n 1)
           echo "Found $REQ"
-          pip install -r "$REQ"
+          pip install -r $REQ
 
       - uses: actions/setup-node@v3
         with:
@@ -29,8 +29,7 @@ jobs:
 
       - name: Build Frontend
         run: |
-          cd app
-          PKG=$(find. -name "package.json" | head -n 1)
+          PKG=$(find app -name "package.json" | head -n 1)
           DIR=$(dirname "$PKG")
           echo "Frontend at $DIR"
           cd "$DIR"
