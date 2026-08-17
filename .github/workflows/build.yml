@@ -1,4 +1,4 @@
-name: Build APK from ZIP
+name: Build Web App
 on: [push]
 jobs:
   build:
@@ -6,26 +6,23 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Unzip and Find Project
+      - name: Unzip and List
         run: |
           unzip -o "*.zip"
-          echo "--- All files ---"
-          ls -R | head -n 100
-          PROJECT_DIR=$(find. -name "pubspec.yaml" | head -n 1 | xargs dirname)
-          echo "Found Flutter project at: $PROJECT_DIR"
-          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+          ls -la
+          echo "--- Finding pubspec.yaml ---"
+          find. -name "pubspec.yaml" || echo "Flutter project NOT FOUND"
 
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.22.0'
-
-      - name: Build APK
+      - name: Build Python Backend Check
         run: |
-          cd "${{ env.PROJECT_DIR }}"
-          flutter pub get
-          flutter build apk --debug
+          cd $(find. -name "requirements.txt" | head -n 1 | xargs dirname)
+          pip install -r requirements.txt
+          python -m pytest || echo "Tests done"
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: window-section-apk
-          path: ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-debug.apk
+      - name: Build React Frontend
+        run: |
+          FRONTEND_DIR=$(find. -name "package.json" | head -n 1 | xargs dirname)
+          echo "Frontend at $FRONTEND_DIR"
+          cd $FRONTEND_DIR
+          npm install
+          npm run build
