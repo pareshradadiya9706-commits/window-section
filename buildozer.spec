@@ -5,7 +5,9 @@ package.domain = org.paresh.dharam
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,ttf,db
 
-# આ લાઈન બહુ જ મહત્વની છે:
+# આ લાઈન ઉમેરવી ફરજિયાત છે:
+version = 1.0
+
 requirements = python3,kivy,kivymd,sqlite3
 
 orientation = portrait
